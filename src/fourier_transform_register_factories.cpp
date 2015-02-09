@@ -2,16 +2,18 @@
 
 namespace hpce{
 
+
 // Declare factory functions which are implemented elsewhere.
 std::shared_ptr<fourier_transform> Create_fast_fourier_transform();
 std::shared_ptr<fourier_transform> Create_direct_fourier_transform();
+
 	
 // TODO : Declare your factories here
-/*
-namespace YOUR_LOGIN{
+
+namespace tp1811{
 	std::shared_ptr<fourier_transform> Create_direct_fourier_transform_parfor();
 }
-*/
+
 
 
 void fourier_transform::RegisterDefaultFactories()
@@ -20,9 +22,10 @@ void fourier_transform::RegisterDefaultFactories()
 	
 	RegisterTransformFactory("hpce.fast_fourier_transform", Create_fast_fourier_transform);
 	RegisterTransformFactory("hpce.direct_fourier_transform", Create_direct_fourier_transform);
+	RegisterTransformFactory("hpce.tp1811.direct_fourier_transform_parfor", hpce::tp1811::Create_direct_fourier_transform_parfor);
 	
 	// TODO : Add your factories here
 	// e.g. RegisterTransformFactory("hpce.YOUR_LOGIN.direct_fourier_transform_parfor", hpce::YOUR_LOGIN::Create_direct_fourier_transform_parfor);
 }
-	
+
 }; // namespace hpce
