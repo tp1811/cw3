@@ -8,12 +8,13 @@ LDLIBS =
 CPPFLAGS = $(CPPFLAGS) /Ox
 
 # TODO : Indicate where you have put the TBB installer
-TBB_DIR = ..\local
+TBB_DIR = C:\Users\QueenElizabeth\tbb
 
 TBB_INC_DIR = $(TBB_DIR)\include
 
 # TODO: Choose the correct library for your build
-TBB_LIB_DIR = $(TBB_DIR)\lib\intel64\vc10
+#TBB_LIB_DIR = $(TBB_DIR)\lib\intel64\vc10
+TBB_LIB_DIR = $(TBB_DIR)\lib\intel64\vc12
 
 CPPFLAGS = $(CPPFLAGS) /I$(TBB_INC_DIR)
 LDFLAGS = $(LDFLAGS) /LIBPATH:$(TBB_LIB_DIR)
