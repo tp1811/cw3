@@ -22,7 +22,11 @@ protected:
 		
 		return ret;
 	}
-
+	
+	const int DEFAULT_RECURSION = 8;	// number of cores with HT//
+	char *rec_limit=getenv("HPCE_FFT_RECURSION");//
+	size_t rec_limit_int =  (rec_limit == NULL) ? DEFAULT_RECURSION : atoi(rec_limit);//
+	
 	virtual void forwards_impl(
 		size_t n,	const std::complex<double> &wn,
 		const std::complex<double> *pIn, size_t sIn,
@@ -38,15 +42,22 @@ protected:
 			pOut[sOut] = pIn[0]-pIn[sIn];
 		}else{
 			size_t m = n/2;
-
-			auto left=[&](){forwards_impl(m,wn*wn,pIn,2*sIn,pOut,sOut);};
-			auto right=[&](){forwards_impl(m,wn*wn,pIn+sIn,2*sIn,pOut+sOut*m,sOut);};
 			
-			// spawn children tasks
-			tbb::task_group g;
-			g.run(left);
-			g.run(right);
-			g.wait();	// allow time for children for tasks to finish
+			if (rec_limit_int<16){
+				auto left=[&](){forwards_impl(m,wn*wn,pIn,2*sIn,pOut,sOut);};
+				auto right=[&](){forwards_impl(m,wn*wn,pIn+sIn,2*sIn,pOut+sOut*m,sOut);};
+			
+				// spawn children tasks
+				tbb::task_group g;
+				g.run(left);
+				g.run(right);
+				g.wait();	// allow time for children for tasks to finish
+				//printf("test");	// print statement to check switch between parallel & serial
+				//exit(EXIT_SUCCESS);	// Test!!
+			}
+			
+			forwards_impl(m,wn*wn,pIn,2*sIn,pOut,sOut);
+			forwards_impl(m,wn*wn,pIn+sIn,2*sIn,pOut+sOut*m,sOut);
 			 
 			std::complex<double> w=std::complex<double>(1.0, 0.0);
 
