@@ -1,8 +1,9 @@
 #include "fourier_transform.hpp"
+#include "tbb/tbb.h"	//
 
 #include <cmath>
 #include <cassert>
-
+//using namespace tbb;	//
 namespace hpce{
 	namespace tp1811{
 
@@ -29,14 +30,23 @@ protected:
 		// = -i*2*pi / n
 		complex_t neg_im_2pi_n=-complex_t(0.0, 1.0)*2.0*PI / (double)n;
 		
-		for(size_t kk=0;kk<n;kk++){
+		/*for(size_t kk=0;kk<n;kk++){
 			complex_t acc=0;
 			for(size_t ii=0;ii<n;ii++){
 				// acc += exp(-i * 2 * pi * kk / n);
 				acc+=pIn[ii*sIn] * exp( neg_im_2pi_n * (double)kk * (double)ii );
 			}
 			pOut[kk*sOut]=acc;
-		}
+		}*/
+		// Parallelisation of outer loop
+		tbb::parallel_for<size_t>(0, n, 1, [=](int kk){
+			complex_t acc=0;
+			for(size_t ii=0;ii<n;ii++){
+				// acc += exp(-i * 2 * pi * kk / n);
+				acc+=pIn[ii*sIn] * exp( neg_im_2pi_n * (double)kk * (double)ii );
+			}
+			pOut[kk*sOut]=acc;
+		});
 	}
 	
 	virtual void backwards_impl(
@@ -54,14 +64,22 @@ protected:
 		
 		const double scale=1.0/n;
 		
-		for(size_t kk=0;kk<n;kk++){
+		tbb::parallel_for<size_t>(0, n, 1, [=](int kk){
 			complex_t acc=0;
 			for(size_t ii=0;ii<n;ii++){
 				// acc += exp(i * 2 * pi * kk / n);
 				acc+=pIn[ii*sIn] * exp( im_2pi_n * (double)kk * (double)ii );
 			}
 			pOut[kk*sOut]=acc*scale;
-		}
+		});
+		/*for(size_t kk=0;kk<n;kk++){
+			complex_t acc=0;
+			for(size_t ii=0;ii<n;ii++){
+				// acc += exp(i * 2 * pi * kk / n);
+				acc+=pIn[ii*sIn] * exp( im_2pi_n * (double)kk * (double)ii );
+			}
+			pOut[kk*sOut]=acc*scale;
+		}*/
 	}
 	
 public:
