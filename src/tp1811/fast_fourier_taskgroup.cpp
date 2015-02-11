@@ -56,8 +56,10 @@ protected:
 				//exit(EXIT_SUCCESS);	// Test!!
 			}
 			
-			forwards_impl(m,wn*wn,pIn,2*sIn,pOut,sOut);
-			forwards_impl(m,wn*wn,pIn+sIn,2*sIn,pOut+sOut*m,sOut);
+			else{
+				forwards_impl(m,wn*wn,pIn,2*sIn,pOut,sOut);
+				forwards_impl(m,wn*wn,pIn+sIn,2*sIn,pOut+sOut*m,sOut);
+			}
 			 
 			std::complex<double> w=std::complex<double>(1.0, 0.0);
 
