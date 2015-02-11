@@ -1,6 +1,6 @@
 #include "fourier_transform.hpp"
-#include "tbb/tbb.h"	//
-
+//#include "tbb/tbb.h"	//
+#include "tbb/parallel_for.h"
 #include <cmath>
 #include <cassert>
 #include <cstdlib>
@@ -32,16 +32,17 @@ protected:
 		// = -i*2*pi / n
 		complex_t neg_im_2pi_n=-complex_t(0.0, 1.0)*2.0*PI / (double)n;
 		
-		size_t ii=0, kk=0;
+		//size_t ii=0, kk=0;
 		const int DEFAULT_K = 8;	// number of cores with HT
 		char *chunk=getenv("HPCE_DIRECT_OUTER_K");
-		size_t chunk_int =  (chunk == NULL) ? DEFAULT_K : atoi(chunk);
+		int chunk_int =  (chunk == NULL) ? DEFAULT_K : atoi(chunk);
 		
 		typedef tbb::blocked_range<size_t> my_range_t;
 		my_range_t range(0,n,chunk_int);
-		auto f=[&](const my_range_t &chunk_int){
-			complex_t acc = 0;
+		auto f=[=](const my_range_t &chunk_int){
+			
 			for(size_t kk=chunk_int.begin(); kk!=chunk_int.end(); kk++){
+				complex_t acc = 0;
 				for(size_t ii=0;ii<n;ii++){
 				// acc += exp(-i * 2 * pi * kk / n);
 				acc+=pIn[ii*sIn] * exp( neg_im_2pi_n * (double)kk * (double)ii );
