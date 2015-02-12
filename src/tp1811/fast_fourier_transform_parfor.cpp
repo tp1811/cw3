@@ -31,7 +31,7 @@ protected:
 	) const 
 	{
 		assert(n>0);
-		const int DEFAULT_LOOP_K = 8;//
+		const int DEFAULT_LOOP_K = 32;//
 		char *chunk_size=getenv("HPCE_FFT_LOOP_K");//
 		size_t chunk_size_int = (chunk_size==NULL) ? DEFAULT_LOOP_K : atoi(chunk_size);//
 		
