@@ -16,6 +16,7 @@ namespace tp1811{
 	std::shared_ptr<fourier_transform> Create_direct_fourier_transform_chunked();
 	std::shared_ptr<fourier_transform> Create_fast_fourier_transform_parfor();
 	std::shared_ptr<fourier_transform> Create_fast_fourier_transform_combined();
+	std::shared_ptr<fourier_transform> Create_fast_fourier_transform_opt();
 }
 
 
@@ -31,6 +32,7 @@ void fourier_transform::RegisterDefaultFactories()
 	RegisterTransformFactory("hpce.tp1811.direct_fourier_transform_chunked", hpce::tp1811::Create_direct_fourier_transform_chunked);
 	RegisterTransformFactory("hpce.tp1811.fast_fourier_transform_combined", hpce::tp1811::Create_fast_fourier_transform_combined);
 	RegisterTransformFactory("hpce.tp1811.fast_fourier_transform_parfor", hpce::tp1811::Create_fast_fourier_transform_parfor);
+	RegisterTransformFactory("hpce.tp1811.fast_fourier_transform_opt", hpce::tp1811::Create_fast_fourier_transform_opt);
 	
 	
 	// TODO : Add your factories here

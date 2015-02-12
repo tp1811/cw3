@@ -1,12 +1,13 @@
 #include "fourier_transform.hpp"
-#include "tbb/task_group.h"	// 
+#include "tbb/parallel_for.h"
+#include "tbb/task_group.h"
 #include <cmath>
 #include <cassert>
 
 namespace hpce{
 	namespace tp1811{
 
-class fast_fourier_taskgroup
+class fast_fourier_transform_opt
 	: public fourier_transform
 {
 protected:
@@ -23,10 +24,7 @@ protected:
 		return ret;
 	}
 	
-	const int DEFAULT_RECURSION = 8;	// number of cores with HT//
-	char *rec_limit=getenv("HPCE_FFT_RECURSION");//
-	size_t rec_limit_int =  (rec_limit == NULL) ? DEFAULT_RECURSION : atoi(rec_limit);//
-	
+
 	virtual void forwards_impl(
 		size_t n,	const std::complex<double> &wn,
 		const std::complex<double> *pIn, size_t sIn,
@@ -34,6 +32,13 @@ protected:
 	) const 
 	{
 		assert(n>0);
+		const int DEFAULT_LOOP_K = 16384;//
+		char *chunk_size=getenv("HPCE_FFT_LOOP_K");//
+		size_t chunk_size_int = (chunk_size==NULL) ? DEFAULT_LOOP_K : atoi(chunk_size);//
+		
+		const int DEFAULT_RECURSION = 16384;	// 
+		char *rec_limit=getenv("HPCE_FFT_RECURSION");//
+		size_t rec_limit_int =  (rec_limit == NULL) ? DEFAULT_RECURSION : atoi(rec_limit);//
 		
 		if (n == 1){
 			pOut[0] = pIn[0];
@@ -46,7 +51,7 @@ protected:
 			if (rec_limit_int<16){
 				auto left=[&](){forwards_impl(m,wn*wn,pIn,2*sIn,pOut,sOut);};
 				auto right=[&](){forwards_impl(m,wn*wn,pIn+sIn,2*sIn,pOut+sOut*m,sOut);};
-			
+				
 				// spawn children tasks
 				tbb::task_group g;
 				g.run(left);
@@ -62,13 +67,31 @@ protected:
 			}
 			 
 			std::complex<double> w=std::complex<double>(1.0, 0.0);
-
-			for (size_t j=0;j<m;j++){
-			  std::complex<double> t1 = w*pOut[m+j];
-			  std::complex<double> t2 = pOut[j]-t1;
-			  pOut[j] = pOut[j]+t1;                 /*  pOut[j] = pOut[j] + w^i pOut[m+j] */
-			  pOut[j+m] = t2;                          /*  pOut[j] = pOut[j] - w^i pOut[m+j] */
-			  w = w*wn;
+			
+			if(m<=chunk_size_int){
+				for (size_t j=0;j<m;j++){
+				std::complex<double> t1 = w*pOut[m+j];
+				std::complex<double> t2 = pOut[j]-t1;
+				pOut[j] = pOut[j]+t1;                 /*  pOut[j] = pOut[j] + w^i pOut[m+j] */
+				pOut[j+m] = t2;                          /*  pOut[j] = pOut[j] - w^i pOut[m+j] */
+				w = w*wn;
+				}
+			}
+			
+			else{
+				typedef tbb::blocked_range<size_t> my_range_t;
+				my_range_t range(0, m, chunk_size_int);
+				auto f=[=](const my_range_t &chunk_size_int){
+					std::complex<double> w2 = pow(wn, chunk_size_int.begin());
+					for(size_t i=chunk_size_int.begin(); i!=chunk_size_int.end(); i++){
+						std::complex<double> t1 = w2*pOut[m+i];
+						std::complex<double> t2 = pOut[i]-t1;
+						pOut[i] = pOut[i]+t1;                 /*  pOut[j] = pOut[j] + w^i pOut[m+j] */
+						pOut[i+m] = t2;                          /*  pOut[j] = pOut[j] - w^i pOut[m+j] */
+						w2 = w2*wn;
+					}
+				};
+				tbb::parallel_for(range, f, tbb::simple_partitioner());
 			}
 		}
 	}
@@ -96,9 +119,9 @@ public:
 	{ return false; }
 };
 
-std::shared_ptr<fourier_transform> Create_fast_fourier_taskgroup()
+std::shared_ptr<fourier_transform> Create_fast_fourier_transform_opt()
 {
-	return std::make_shared<fast_fourier_taskgroup>();
+	return std::make_shared<fast_fourier_transform_opt>();
 }
-	} // namespace tp1811
+	}
 }; // namespace hpce

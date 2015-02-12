@@ -23,7 +23,7 @@ protected:
 		return ret;
 	}
 	
-	const int DEFAULT_RECURSION = 32;	// 
+	const int DEFAULT_RECURSION = 32;	// value determined via testing
 	char *rec_limit=getenv("HPCE_FFT_RECURSION");//
 	size_t rec_limit_int =  (rec_limit == NULL) ? DEFAULT_RECURSION : atoi(rec_limit);//
 	
