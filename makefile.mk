@@ -23,7 +23,7 @@ LDFLAGS = $(LDFLAGS) /LIBPATH:$(TBB_LIB_DIR)
 FOURIER_CORE_OBJS = src/fourier_transform.obj src/fourier_transform_register_factories.obj
 
 # implementations
-FOURIER_IMPLEMENTATION_OBJS =  src/fast_fourier_transform.obj	src/direct_fourier_transform.obj	src/tp1811/direct_fourier_transform_parfor.obj	src/tp1811/fast_fourier_taskgroup.obj	src/tp1811/direct_fourier_transform_chunked.obj	src/tp1811/fast_fourier_transform_parfor.obj
+FOURIER_IMPLEMENTATION_OBJS =  src/fast_fourier_transform.obj	src/direct_fourier_transform.obj	src/tp1811/direct_fourier_transform_parfor.obj	src/tp1811/fast_fourier_taskgroup.obj	src/tp1811/direct_fourier_transform_chunked.obj	src/tp1811/fast_fourier_transform_parfor.obj	src/tp1811/fast_fourier_transform_combined.obj
 
 FOURIER_OBJS = $(FOURIER_CORE_OBJS) $(FOURIER_IMPLEMENTATION_OBJS)
 
