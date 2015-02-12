@@ -1,5 +1,5 @@
 #include "fourier_transform.hpp"
-
+#include "tbb/parallel_for.h"
 #include <cmath>
 #include <cassert>
 
@@ -31,9 +31,9 @@ protected:
 	) const 
 	{
 		assert(n>0);
-		const int DEFAULT_LOOP_K = 20;//
-		char *fft_loop=getenv("HPCE_FFT_LOOP_K");//
-		size_t fft_loop_int = (fft_loop==NULL) ? DEFAULT_LOOP_K : atoi(fft_loop);//
+		const int DEFAULT_LOOP_K = 8;//
+		char *chunk_size=getenv("HPCE_FFT_LOOP_K");//
+		size_t chunk_size_int = (chunk_size==NULL) ? DEFAULT_LOOP_K : atoi(chunk_size);//
 		
 		if (n == 1){
 			pOut[0] = pIn[0];
@@ -47,7 +47,7 @@ protected:
 			 
 			std::complex<double> w=std::complex<double>(1.0, 0.0);
 			
-			if(m<=fft_loop_int){
+			if(m<=chunk_size_int){
 				for (size_t j=0;j<m;j++){
 				std::complex<double> t1 = w*pOut[m+j];
 				std::complex<double> t2 = pOut[j]-t1;
@@ -58,21 +58,19 @@ protected:
 			}
 			
 			else{
-				for (size_t j=0;j<fft_loop_int;j++){
-				  std::complex<double> t1 = w*pOut[m+j];
-				  std::complex<double> t2 = pOut[j]-t1;
-				  pOut[j] = pOut[j]+t1;                 /*  pOut[j] = pOut[j] + w^i pOut[m+j] */
-				  pOut[j+m] = t2;                          /*  pOut[j] = pOut[j] - w^i pOut[m+j] */
-				  w = w*wn;
-				}
-				w=pow(wn,fft_loop_int);
-				for (size_t j=fft_loop_int;j<m;j++){
-				  std::complex<double> t1 = w*pOut[m+j];
-				  std::complex<double> t2 = pOut[j]-t1;
-				  pOut[j] = pOut[j]+t1;                 /*  pOut[j] = pOut[j] + w^i pOut[m+j] */
-				  pOut[j+m] = t2;                          /*  pOut[j] = pOut[j] - w^i pOut[m+j] */
-				  w = w*wn;
-				}
+				typedef tbb::blocked_range<size_t> my_range_t;
+				my_range_t range(0, m, chunk_size_int);
+				auto f=[=](const my_range_t &chunk_size_int){
+					std::complex<double> w2 = pow(wn, chunk_size_int.begin());
+					for(size_t i=chunk_size_int.begin(); i!=chunk_size_int.end(); i++){
+						std::complex<double> t1 = w2*pOut[m+i];
+						std::complex<double> t2 = pOut[i]-t1;
+						pOut[i] = pOut[i]+t1;                 /*  pOut[j] = pOut[j] + w^i pOut[m+j] */
+						pOut[i+m] = t2;                          /*  pOut[j] = pOut[j] - w^i pOut[m+j] */
+						w2 = w2*wn;
+					}
+				};
+				tbb::parallel_for(range, f, tbb::simple_partitioner());
 			}
 		}
 	}
